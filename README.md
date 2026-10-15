@@ -49,7 +49,17 @@ node --test test/policy.test.js
 
 ## 安装到 Web profile
 
-安装会修改目标 profile，操作前请先备份。本插件 bundle 应位于官方 base/Web bundles 之后。当前通过本地 link 安装，不需要发布到 npm，也无需先安装仓库的开发依赖。
+```sh
+dsh plugin --profile web add github:deshark42/dsh-compaction-basic-disable
+```
+
+安装会修改目标 profile，操作前请先备份。本插件 bundle 应位于官方 base/Web bundles 之后。插件没有构建步骤和运行时依赖，无需预先安装仓库的开发依赖。
+
+这条命令从默认分支解析版本，profile 锁文件会记录对应的 Git 提交；不会随远端分支变化自动更新已安装的副本。需要固定版本时，可在 GitHub 地址后追加 `#完整提交SHA`。包中的 `private: true` 只防止误发布到 npm，不影响 GitHub 安装。
+
+### 本地开发安装（可选）
+
+只有需要修改插件源码时，才需要克隆并使用本地 link：
 
 ```sh
 git clone https://github.com/deshark42/dsh-compaction-basic-disable.git
