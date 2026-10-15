@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { apply, blockedPackage, disableBasicCompaction, gateService, presetPackage } from '../src/index.js';
+import { apply, blockedPackage, commandPackage, disableBasicCompaction, gateService, presetPackage } from '../src/index.js';
 
 function freeze(value) {
   if (value && typeof value === 'object') {
@@ -28,8 +28,8 @@ function middleware() {
   return registrations[0].handler;
 }
 
-test('disables every exact-name backend across nested Cordis groups without mutating input', () => {
-  const command = { id: 'command-compact', name: '@deepseek-ai/dsh-command-compact' };
+test('disables the backend and its dependent command across nested Cordis groups without mutating input', () => {
+  const command = { id: 'command-compact', name: commandPackage };
   const other = { name: 'billion-context', config: { auto: true } };
   const rows = freeze([
     { id: 'renamed-backend', name: blockedPackage, disabled: false, config: { auto: true } },
@@ -46,7 +46,8 @@ test('disables every exact-name backend across nested Cordis groups without muta
   assert.equal(result[0].disabled, true);
   assert.equal(result[1].config[1].config[0].disabled, true);
   assert.deepEqual(result[0].config, { auto: true });
-  assert.equal(result[1].config[0], command, 'do not independently hide /compact');
+  assert.deepEqual(result[1].config[0], { ...command, disabled: true },
+    'disable the command instead of leaving it waiting for the absent backend');
   assert.equal(result[2], other, 'other compression engines remain untouched');
   assert.equal(result[3].disabled, undefined, 'match package names exactly');
   assert.deepEqual(disableBasicCompaction(result), result);

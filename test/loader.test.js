@@ -6,6 +6,7 @@ import { Context } from '@deepseek-ai/cordis';
 import { applyEntryPatches, entryListSchema } from '@deepseek-ai/cordis-plugin-include';
 import { EntryTree, Group, Loader } from '@deepseek-ai/cordis-plugin-loader';
 import AgentPreset from '@deepseek-ai/dsh-agent-preset';
+import { auditRows } from '@deepseek-ai/dsh-agent-preset-registry';
 import * as Compact from '@deepseek-ai/dsh-command-compact';
 import Basic from '@deepseek-ai/dsh-compaction-basic';
 import { load } from 'js-yaml';
@@ -26,7 +27,7 @@ assert.deepEqual(warnings, []);
 function restoreBackendFlag(rows, originals) {
   return rows.map((row, index) => {
     const original = originals[index];
-    if (row.name === Policy.blockedPackage) {
+    if (row.name === Policy.blockedPackage || row.name === Policy.commandPackage) {
       const restored = { ...row };
       if (Object.hasOwn(original, 'disabled')) restored.disabled = original.disabled;
       else delete restored.disabled;
@@ -47,8 +48,10 @@ test('bundle adds dependency gates without snapshots or changes to existing pres
       'official entry.inject changed: merge its new requirements into the bundle before upgrading');
   }
   const host = { id: 'compaction-basic', name: Policy.blockedPackage };
-  const actual = applyEntryPatches([host, ...rows], bundle, warn);
+  const hostCommand = { id: 'command-compact', name: Policy.commandPackage };
+  const actual = applyEntryPatches([host, hostCommand, ...rows], bundle, warn);
   assert.equal(actual.find(row => row.id === host.id).disabled, true);
+  assert.equal(actual.find(row => row.id === hostCommand.id).disabled, true);
   for (const original of rows) {
     const patched = actual.find(row => row.id === original.id);
     assert.deepEqual(patched.config, original.config);
@@ -111,7 +114,11 @@ async function runScenario(t, { enabled = false, missingPolicy = false, upgrade 
       row.config.plugins.push({ id: 'future-tool', name: 'future:official-tool', config: { value: 42 } });
     }
     const before = structuredClone(declarations);
-    let entries = [{ id: 'compaction-basic', name: Policy.blockedPackage, disabled: true }, ...declarations];
+    let entries = [
+      { id: 'compaction-basic', name: Policy.blockedPackage, disabled: true },
+      { id: 'command-compact', name: Policy.commandPackage, disabled: true },
+      ...declarations,
+    ];
     if (enabled) entries = applyEntryPatches(entries, bundle, warn);
     if (missingPolicy) entries = entries.filter(row => row.name !== packageName);
     root = new MemoryTree(ctx);
@@ -128,6 +135,8 @@ async function runScenario(t, { enabled = false, missingPolicy = false, upgrade 
     }
     assert.equal(mounts.length, 4);
     for (const { config, tree } of mounts) {
+      assert.deepEqual(await auditRows(tree), { failed: [], pending: [] },
+        `${config.id} must be usable by the real preset registry`);
       const backend = [...tree.entries()].find(entry => entry.options.name === Policy.blockedPackage);
       const command = [...tree.entries()].find(entry => entry.options.name === '@deepseek-ai/dsh-command-compact');
       assert.ok(backend);
@@ -136,7 +145,8 @@ async function runScenario(t, { enabled = false, missingPolicy = false, upgrade 
       if (enabled) {
         assert.equal(backend.disabled, true);
         assert.equal(backend.fiber, undefined, 'backend must never be instantiated');
-        assert.notEqual(command.options.disabled, true, 'do not independently hide the manual command');
+        assert.equal(command.disabled, true);
+        assert.equal(command.fiber, undefined, 'the manual command must not wait for a nonexistent service');
         assert.deepEqual({ ...config, plugins: restoreBackendFlag(config.plugins, original.plugins) }, original);
       } else {
         assert.equal(backend.disabled, false);
@@ -157,6 +167,32 @@ async function runScenario(t, { enabled = false, missingPolicy = false, upgrade 
     registrationSpy.mock.restore();
   }
 }
+
+test('real readiness audit rejects a settled command waiting for compaction', async () => {
+  const ctx = new Context();
+  ctx.baseUrl = baseUrl;
+  let tree;
+  class CommandTree extends EntryTree {
+    async import(name) {
+      assert.equal(name, Policy.commandPackage);
+      return Compact;
+    }
+  }
+  try {
+    await ctx.registry.plugin(Loader, { baseUrl });
+    ctx.reflect.provide('commands', { register() { throw new Error('command must not start'); } });
+    tree = new CommandTree(ctx);
+    await tree.root.update([{ id: 'command-compact', name: Policy.commandPackage }]);
+    await tree.await();
+    assert.deepEqual(await auditRows(tree), {
+      failed: [],
+      pending: ['command-compact (@deepseek-ai/dsh-command-compact): waiting for compaction'],
+    });
+  } finally {
+    tree?.root.stop();
+    await ctx.fiber.dispose();
+  }
+});
 
 test('baseline instantiates all four real official compaction backends', t => runScenario(t));
 test('policy prevents backend instances and automatic listener registration despite delayed import', t =>

@@ -178,6 +178,9 @@ importers:
       '@deepseek-ai/dsh-agent-preset':
         specifier: 0.2.1-alpha.3
         version: 0.2.1-alpha.3(@deepseek-ai/cordis-plugin-loader@1.0.6-alpha.2)(@deepseek-ai/cordis@4.0.5-alpha.2)(@deepseek-ai/dsh-agent-preset-registry@0.2.1-alpha.3(42e8fa0c62177ad097a11413f8268bc9))
+      '@deepseek-ai/dsh-agent-preset-registry':
+        specifier: 0.2.1-alpha.3
+        version: 0.2.1-alpha.3(42e8fa0c62177ad097a11413f8268bc9)
       '@deepseek-ai/dsh-command-compact':
         specifier: 0.2.1-alpha.3
         version: 0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)(@deepseek-ai/dsh-commands@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)(@deepseek-ai/dsh-agent@0.2.1-alpha.3(57a84fdf81322ea69886ef5079e7be1e))(@deepseek-ai/dsh-attachment@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)(@deepseek-ai/dsh-brand@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)))(@deepseek-ai/dsh-brand@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2))(@deepseek-ai/dsh-llm@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2))(@deepseek-ai/dsh-scope@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2))(@deepseek-ai/dsh-session@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)(@deepseek-ai/dsh-scope@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)))(@deepseek-ai/dsh-typert-protocol@0.2.1-alpha.3(@deepseek-ai/cordis@4.0.5-alpha.2)))(@deepseek-ai/dsh-compaction@0.2.1-alpha.3(082d9b5880c5d8110adcbed826cd11d5))

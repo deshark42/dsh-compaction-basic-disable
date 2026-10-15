@@ -1,5 +1,6 @@
 export const name = 'compaction-basic-disable-policy';
 export const blockedPackage = '@deepseek-ai/dsh-compaction-basic';
+export const commandPackage = '@deepseek-ai/dsh-command-compact';
 export const presetPackage = '@deepseek-ai/dsh-agent-preset';
 export const gateService = 'localBasicCompactionPolicy';
 
@@ -7,7 +8,7 @@ export const gateService = 'localBasicCompactionPolicy';
 export function disableBasicCompaction(rows) {
   return rows.map(row => {
     if (!row || typeof row !== 'object') return row;
-    if (row.name === blockedPackage) return { ...row, disabled: true };
+    if (row.name === blockedPackage || row.name === commandPackage) return { ...row, disabled: true };
     if (row.group && Array.isArray(row.config)) {
       return { ...row, config: disableBasicCompaction(row.config) };
     }
