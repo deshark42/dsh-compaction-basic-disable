@@ -1,0 +1,19 @@
+# Load after the official base/Web bundles. No preset config snapshots.
+- insert:
+    - id: compaction-basic-disable-policy
+      name: '@local/dsh-compaction-basic-disable'
+
+# Host-plane backend; Web already disables it, CLI/base profiles may not.
+- id: compaction-basic
+  disabled: true
+
+# Gate each current Web preset on the policy, without replacing its config.
+# Entry inject lists are replaced by Cordis patches, not concatenated.
+- id: preset-standard
+  inject: [localBasicCompactionPolicy]
+- id: preset-ptc
+  inject: [localBasicCompactionPolicy]
+- id: preset-minimal
+  inject: [localBasicCompactionPolicy]
+- id: preset-cordis
+  inject: [localBasicCompactionPolicy]
